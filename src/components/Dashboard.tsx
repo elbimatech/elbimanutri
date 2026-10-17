@@ -2,8 +2,8 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Sidebar, NavigationTab } from './Sidebar';
 import { PacientesView } from './PacientesView';
+import { CadastroPacienteView } from './CadastroPacienteView';
 import { PatientProfileModal } from './PatientProfileModal';
-import { NewPatientModal } from './NewPatientModal';
 import { 
   getDashboardStats, 
   DashboardStats, 
@@ -43,7 +43,6 @@ export const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
-  const [isNewPatientModalOpen, setIsNewPatientModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
 
@@ -91,10 +90,6 @@ export const Dashboard: React.FC = () => {
     setSelectedPatientId(pacienteId);
   };
 
-  const handlePatientCreated = async () => {
-    await loadDashboardData(true);
-  };
-
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Menu Lateral Fixo */}
@@ -124,7 +119,11 @@ export const Dashboard: React.FC = () => {
 
               <div>
                 <h2 className="text-base sm:text-lg font-bold text-slate-800 leading-tight">
-                  {activeTab === 'dashboard' ? 'Painel de Controle' : 'Gerenciamento de Pacientes'}
+                  {activeTab === 'dashboard'
+                    ? 'Painel de Controle'
+                    : activeTab === 'novo-paciente'
+                    ? 'Cadastro de Paciente'
+                    : 'Gerenciamento de Pacientes'}
                 </h2>
                 <p className="text-xs text-slate-400 hidden sm:block">
                   {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
@@ -148,7 +147,7 @@ export const Dashboard: React.FC = () => {
               <Button
                 variant="primary"
                 size="sm"
-                onClick={() => setIsNewPatientModalOpen(true)}
+                onClick={() => setActiveTab('novo-paciente')}
                 className="shadow-sm shadow-emerald-600/20"
               >
                 <UserPlus className="w-4 h-4" />
@@ -160,10 +159,19 @@ export const Dashboard: React.FC = () => {
 
         {/* Corpo da Página */}
         <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto space-y-8">
-          {activeTab === 'pacientes' ? (
+          {activeTab === 'novo-paciente' ? (
+            <CadastroPacienteView
+              onBack={() => setActiveTab('pacientes')}
+              onPatientSaved={(savedPatient) => {
+                loadDashboardData(true);
+                setSelectedPatientId(savedPatient.id);
+                setActiveTab('pacientes');
+              }}
+            />
+          ) : activeTab === 'pacientes' ? (
             <PacientesView
               onSelectPatient={handleOpenPatientProfile}
-              onOpenNewPatientModal={() => setIsNewPatientModalOpen(true)}
+              onOpenNewPatientPage={() => setActiveTab('novo-paciente')}
             />
           ) : (
             <>
@@ -450,13 +458,6 @@ export const Dashboard: React.FC = () => {
           onDataChanged={() => loadDashboardData(true)}
         />
       )}
-
-      {/* Modal de Cadastro de Novo Paciente */}
-      <NewPatientModal
-        isOpen={isNewPatientModalOpen}
-        onClose={() => setIsNewPatientModalOpen(false)}
-        onPatientCreated={handlePatientCreated}
-      />
     </div>
   );
 };

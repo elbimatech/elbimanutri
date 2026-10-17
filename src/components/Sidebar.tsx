@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
-export type NavigationTab = 'dashboard' | 'pacientes';
+export type NavigationTab = 'dashboard' | 'pacientes' | 'novo-paciente';
 
 interface SidebarProps {
   activeTab: NavigationTab;
@@ -108,7 +108,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </p>
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = activeTab === item.id;
+              const isActive = activeTab === item.id || (item.id === 'pacientes' && activeTab === 'novo-paciente');
               return (
                 <button
                   key={item.id}
