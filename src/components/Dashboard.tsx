@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { Sidebar, NavigationTab } from './Sidebar';
 import { PacientesView } from './PacientesView';
 import { CadastroPacienteView } from './CadastroPacienteView';
-import { PatientProfileModal } from './PatientProfileModal';
+import { PerfilPacienteView } from './PerfilPacienteView';
 import { ThemeToggle } from './ThemeToggle';
 import { 
   getDashboardStats, 
@@ -89,6 +89,7 @@ export const Dashboard: React.FC = () => {
 
   const handleOpenPatientProfile = (pacienteId: string) => {
     setSelectedPatientId(pacienteId);
+    setActiveTab('perfil-paciente');
   };
 
   return (
@@ -168,8 +169,17 @@ export const Dashboard: React.FC = () => {
               onPatientSaved={(savedPatient) => {
                 loadDashboardData(true);
                 setSelectedPatientId(savedPatient.id);
+                setActiveTab('perfil-paciente');
+              }}
+            />
+          ) : activeTab === 'perfil-paciente' && selectedPatientId ? (
+            <PerfilPacienteView
+              pacienteId={selectedPatientId}
+              onBack={() => {
+                setSelectedPatientId(null);
                 setActiveTab('pacientes');
               }}
+              onPatientUpdated={() => loadDashboardData(true)}
             />
           ) : activeTab === 'pacientes' ? (
             <PacientesView
@@ -443,15 +453,6 @@ export const Dashboard: React.FC = () => {
           )}
         </main>
       </div>
-
-      {/* Modal de Perfil do Paciente */}
-      {selectedPatientId && (
-        <PatientProfileModal
-          pacienteId={selectedPatientId}
-          onClose={() => setSelectedPatientId(null)}
-          onDataChanged={() => loadDashboardData(true)}
-        />
-      )}
     </div>
   );
 };

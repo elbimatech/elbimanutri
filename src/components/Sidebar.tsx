@@ -15,7 +15,7 @@ import {
 import { cn } from '../lib/utils';
 import { ThemeToggle } from './ThemeToggle';
 
-export type NavigationTab = 'dashboard' | 'pacientes' | 'novo-paciente';
+export type NavigationTab = 'dashboard' | 'pacientes' | 'novo-paciente' | 'perfil-paciente';
 
 interface SidebarProps {
   activeTab: NavigationTab;
@@ -95,7 +95,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </p>
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = activeTab === item.id || (item.id === 'pacientes' && activeTab === 'novo-paciente');
+              const isActive = activeTab === item.id || (item.id === 'pacientes' && (activeTab === 'novo-paciente' || activeTab === 'perfil-paciente'));
               return (
                 <button
                   key={item.id}

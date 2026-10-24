@@ -61,6 +61,13 @@ export interface Consulta {
   created_at?: string;
 }
 
+export interface PlanoAlimentar {
+  id: string;
+  paciente_id: string;
+  conteudo: any;
+  created_at: string;
+}
+
 /**
  * Carrega todas as métricas do Dashboard em tempo real diretamente do Neon DB
  */
@@ -298,8 +305,107 @@ export async function createConsulta(pacienteId: string, data: Partial<Consulta>
 
     return rows && rows.length > 0 ? (rows[0] as unknown as Consulta) : null;
   } catch (error) {
-    console.error('Erro ao criar consulta no Neon:', error);
+    console.error('Erro ao criar consulta:', error);
     throw error;
+  }
+}
+
+/**
+ * Atualiza os dados cadastrais do paciente diretamente no banco de dados
+ */
+export async function updatePaciente(
+  pacienteId: string,
+  nutricionistaId: string,
+  data: Partial<Paciente>
+): Promise<Paciente | null> {
+  try {
+    const rows = await sql.query(
+      `UPDATE public.pacientes SET
+         nome = COALESCE($3, nome),
+         data_nascimento = $4,
+         sexo = $5,
+         whatsapp = $6,
+         email = $7,
+         peso_inicial = $8,
+         altura = $9,
+         objetivos = $10,
+         objetivo_texto = $11,
+         nivel_atividade = $12,
+         patologias = $13,
+         restricoes_alimentares = $14,
+         alergias = $15,
+         medicamentos = $16,
+         suplementos = $17,
+         refeicoes_por_dia = $18,
+         horario_acorda = $19,
+         horario_dorme = $20,
+         litros_agua = $21,
+         atividade_fisica = $22,
+         atividade_fisica_descricao = $23,
+         observacoes = $24
+       WHERE id = $1 AND nutricionista_id = $2
+       RETURNING *`,
+      [
+        pacienteId,
+        nutricionistaId,
+        data.nome,
+        data.data_nascimento || null,
+        data.sexo || null,
+        data.whatsapp || null,
+        data.email || null,
+        data.peso_inicial !== undefined && data.peso_inicial !== null ? data.peso_inicial : null,
+        data.altura !== undefined && data.altura !== null ? data.altura : null,
+        data.objetivos || [],
+        data.objetivo_texto || null,
+        data.nivel_atividade || null,
+        data.patologias || [],
+        data.restricoes_alimentares || [],
+        data.alergias || [],
+        data.medicamentos || null,
+        data.suplementos || null,
+        data.refeicoes_por_dia !== undefined && data.refeicoes_por_dia !== null ? data.refeicoes_por_dia : null,
+        data.horario_acorda || null,
+        data.horario_dorme || null,
+        data.litros_agua !== undefined && data.litros_agua !== null ? data.litros_agua : null,
+        data.atividade_fisica ?? false,
+        data.atividade_fisica_descricao || null,
+        data.observacoes || null,
+      ]
+    );
+
+    return rows && rows.length > 0 ? (rows[0] as unknown as Paciente) : null;
+  } catch (error) {
+    console.error('Erro ao atualizar paciente:', error);
+    throw error;
+  }
+}
+
+/**
+ * Exclui uma consulta do histórico do paciente
+ */
+export async function deleteConsulta(consultaId: string): Promise<boolean> {
+  try {
+    await sql.query(`DELETE FROM public.consultas WHERE id = $1`, [consultaId]);
+    return true;
+  } catch (error) {
+    console.error('Erro ao excluir consulta:', error);
+    return false;
+  }
+}
+
+/**
+ * Busca todos os planos alimentares salvos do paciente
+ */
+export async function getPlanosAlimentares(pacienteId: string): Promise<PlanoAlimentar[]> {
+  try {
+    const rows = await sql.query(
+      `SELECT * FROM public.planos_alimentares WHERE paciente_id = $1 ORDER BY created_at DESC`,
+      [pacienteId]
+    );
+    return (rows || []) as unknown as PlanoAlimentar[];
+  } catch (error) {
+    console.error('Erro ao buscar planos alimentares:', error);
+    return [];
   }
 }
 
