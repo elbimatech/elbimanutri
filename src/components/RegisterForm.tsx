@@ -67,7 +67,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         }
       }
     } catch (err: any) {
-      setErrorMessage('Ocorreu um erro ao comunicar com os serviços do Neon. Tente novamente.');
+      setErrorMessage('Ocorreu um erro no servidor. Tente novamente.');
     } finally {
       setLoading(false);
     }

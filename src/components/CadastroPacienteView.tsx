@@ -281,7 +281,7 @@ export const CadastroPacienteView: React.FC<CadastroPacienteViewProps> = ({
       });
 
       if (created) {
-        setSuccessToast(`Paciente "${created.nome}" cadastrado com sucesso no Neon!`);
+        setSuccessToast(`Paciente "${created.nome}" cadastrado com sucesso!`);
         setTimeout(() => {
           onPatientSaved(created);
         }, 800);
@@ -322,7 +322,7 @@ export const CadastroPacienteView: React.FC<CadastroPacienteViewProps> = ({
             </span>
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            Organizado em 3 abas clínicas com cálculos automáticos e sincronização no Neon DB
+            Organizado em 3 abas clínicas com cálculos automáticos e sincronização segura
           </p>
         </div>
 
@@ -1288,7 +1288,7 @@ export const CadastroPacienteView: React.FC<CadastroPacienteViewProps> = ({
                 className="shadow-md shadow-emerald-600/20"
               >
                 <Check className="w-4 h-4" />
-                <span>Salvar Paciente no Neon</span>
+                <span>Salvar Paciente</span>
               </Button>
             </div>
           </div>

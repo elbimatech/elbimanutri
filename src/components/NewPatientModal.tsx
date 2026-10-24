@@ -94,7 +94,7 @@ export const NewPatientModal: React.FC<NewPatientModalProps> = ({
       }
     } catch (err: any) {
       console.error('Erro ao cadastrar paciente:', err);
-      setErrorMessage('Ocorreu um erro ao salvar o paciente no Neon. Tente novamente.');
+      setErrorMessage('Ocorreu um erro ao salvar o paciente. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -114,7 +114,7 @@ export const NewPatientModal: React.FC<NewPatientModalProps> = ({
                 Novo Paciente
               </h2>
               <p className="text-xs text-emerald-100">
-                Cadastro de anamnese inicial no banco Neon
+                Cadastro de anamnese inicial
               </p>
             </div>
           </div>
@@ -300,7 +300,7 @@ export const NewPatientModal: React.FC<NewPatientModalProps> = ({
               loading={loading}
             >
               <Check className="w-4 h-4" />
-              <span>Salvar Paciente no Neon</span>
+              <span>Salvar Paciente</span>
             </Button>
           </div>
         </form>

@@ -161,7 +161,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
         {/* Rodapé institucional sutil */}
         <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-6 font-medium">
-          Plataforma de Alta Performance &bull; Neon Database &bull; Segurança de Ponta
+          Plataforma de Alta Performance &bull; Segurança de Ponta
         </p>
       </div>
     </div>

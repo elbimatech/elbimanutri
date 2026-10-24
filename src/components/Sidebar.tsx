@@ -88,20 +88,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
 
-          {/* Status do Neon DB */}
-          <div className="px-6 py-3 bg-emerald-50/60 dark:bg-emerald-950/30 border-b border-emerald-100/60 dark:border-emerald-900/40 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-400 tracking-tight">Neon PostgreSQL</span>
-            </div>
-            <span className="text-[10px] font-medium uppercase px-1.5 py-0.5 rounded bg-emerald-200/60 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300">
-              Conectado
-            </span>
-          </div>
-
           {/* Navigation Links */}
           <nav className="p-4 space-y-1.5" aria-label="Menu Principal">
             <p className="px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">

@@ -65,7 +65,7 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
             <span>Pacientes</span>
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Gestão clínica e prontuários sincronizados em tempo real com o Neon PostgreSQL
+            Gestão clínica e prontuários sincronizados em tempo real
           </p>
         </div>
 
@@ -105,7 +105,7 @@ export const PacientesView: React.FC<PacientesViewProps> = ({
       {loading ? (
         <div className="py-20 flex flex-col items-center justify-center text-emerald-700 dark:text-emerald-400 font-medium bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xs">
           <Loader2 className="w-8 h-8 animate-spin mb-3 text-emerald-600 dark:text-emerald-500" />
-          <span>Carregando pacientes cadastrados no Neon...</span>
+          <span>Carregando pacientes cadastrados...</span>
         </div>
       ) : pacientes.length === 0 ? (
         /* Regra: "Se não houver pacientes cadastrados, exibir a mensagem 'Nenhum paciente cadastrado ainda'" */

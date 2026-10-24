@@ -171,7 +171,7 @@ export const PatientProfileModal: React.FC<PatientProfileModalProps> = ({
           {loading ? (
             <div className="py-16 flex flex-col items-center justify-center text-emerald-700 dark:text-emerald-400 font-medium">
               <Loader2 className="w-8 h-8 animate-spin mb-3 text-emerald-600 dark:text-emerald-500" />
-              <span>Carregando dados do paciente no Neon...</span>
+              <span>Carregando dados do paciente...</span>
             </div>
           ) : !paciente ? (
             <div className="py-12 text-center text-slate-500 dark:text-slate-400">
@@ -470,7 +470,7 @@ export const PatientProfileModal: React.FC<PatientProfileModalProps> = ({
                         size="sm"
                         loading={savingConsulta}
                       >
-                        Salvar Consulta no Neon
+                        Salvar Consulta
                       </Button>
                     </div>
                   </form>
@@ -563,7 +563,7 @@ export const PatientProfileModal: React.FC<PatientProfileModalProps> = ({
         {/* Modal Footer */}
         <div className="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <div className="text-xs text-slate-500 dark:text-slate-400">
-            Dados sincronizados com segurança no Neon DB
+            Dados sincronizados com segurança
           </div>
           <Button variant="secondary" size="md" onClick={onClose}>
             Fechar
