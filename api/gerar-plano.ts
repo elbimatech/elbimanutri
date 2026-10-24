@@ -21,10 +21,15 @@ export default async function handler(req: any, res: any) {
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    console.error('GEMINI_API_KEY não configurada no servidor');
-    return res.status(500).json({ 
-      error: 'Chave de API do Gemini não configurada no servidor. Verifique as variáveis de ambiente.' 
+  if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
+    return res.status(400).json({ 
+      error: 'Chave GEMINI_API_KEY não configurada. Obtenha sua chave no Google AI Studio (https://aistudio.google.com/app/apikey) e adicione ao .env ou nas variáveis da Vercel.' 
+    });
+  }
+
+  if (apiKey.startsWith('AQ.')) {
+    return res.status(401).json({
+      error: 'A chave em GEMINI_API_KEY começa com "AQ.", que é um token de sessão/OAuth e não uma API Key do Google AI Studio. Crie uma chave válida (iniciada por "AIzaSy...") em https://aistudio.google.com/app/apikey e atualize seu .env.'
     });
   }
 

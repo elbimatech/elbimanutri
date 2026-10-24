@@ -53,7 +53,8 @@ import {
   calculateAge, 
   calculateIMC, 
   formatPhone, 
-  formatTimeInput 
+  formatTimeInput,
+  toISODateString 
 } from '../lib/patientHelpers';
 
 interface PerfilPacienteViewProps {
@@ -140,6 +141,7 @@ export const PerfilPacienteView: React.FC<PerfilPacienteViewProps> = ({
   const [isLoadingAi, setIsLoadingAi] = useState(false);
   const [aiMessage, setAiMessage] = useState('');
   const [aiErrorMessage, setAiErrorMessage] = useState<string | null>(null);
+  const [aiErrorDetail, setAiErrorDetail] = useState<string | null>(null);
   const [savingPlano, setSavingPlano] = useState(false);
 
   // Estados de formulário editável diretamente na página (Seção 1)
@@ -183,6 +185,7 @@ export const PerfilPacienteView: React.FC<PerfilPacienteViewProps> = ({
   const loadData = async () => {
     if (!pacienteId || !user?.id) return;
     setLoading(true);
+    setErrorMessage(null);
     try {
       const res = await getPacienteDetalhes(pacienteId, user.id);
       if (res.paciente) {
@@ -203,7 +206,7 @@ export const PerfilPacienteView: React.FC<PerfilPacienteViewProps> = ({
 
   const populateForm = (p: Paciente) => {
     setNome(p.nome || '');
-    setDataNascimento(p.data_nascimento ? p.data_nascimento.split('T')[0] : '');
+    setDataNascimento(toISODateString(p.data_nascimento));
     setSexo(p.sexo || '');
     setWhatsapp(p.whatsapp ? formatPhone(p.whatsapp) : '');
     setEmail(p.email || '');
@@ -1289,6 +1292,8 @@ export const PerfilPacienteView: React.FC<PerfilPacienteViewProps> = ({
                   setPlanosAlimentares(novosPlanos);
                   setIsEditingPlano(false);
                   setEditingPlano(null);
+                  setAiErrorMessage(null);
+                  setAiErrorDetail(null);
                   setSuccessMessage('Plano alimentar salvo com sucesso no prontuário!');
                   if (onPatientUpdated) onPatientUpdated();
                   setTimeout(() => setSuccessMessage(null), 4000);
@@ -1303,6 +1308,7 @@ export const PerfilPacienteView: React.FC<PerfilPacienteViewProps> = ({
                 setIsEditingPlano(false);
                 setEditingPlano(null);
                 setAiErrorMessage(null);
+                setAiErrorDetail(null);
               }}
               saving={savingPlano}
               isLoadingAi={isLoadingAi}
@@ -1311,6 +1317,7 @@ export const PerfilPacienteView: React.FC<PerfilPacienteViewProps> = ({
               onRetryAi={async () => {
                 setIsLoadingAi(true);
                 setAiErrorMessage(null);
+                setAiErrorDetail(null);
                 setAiMessage('Buscando dados do paciente...');
 
                 const t1 = setTimeout(() => setAiMessage('IA analisando metas, restrições e alergias...'), 2000);
@@ -1321,11 +1328,14 @@ export const PerfilPacienteView: React.FC<PerfilPacienteViewProps> = ({
                   const planoGerado = await chamarApiGerarPlano(paciente);
                   setEditingPlano(planoGerado);
                   setIsEditingPlano(true);
+                  setAiErrorMessage(null);
+                  setAiErrorDetail(null);
                 } catch (err: any) {
                   console.error('Erro ao tentar novamente com IA:', err);
                   setAiErrorMessage(
                     'Não foi possível gerar o plano com IA no momento. Deseja tentar novamente ou criar um Plano Manual?'
                   );
+                  setAiErrorDetail(err?.message || null);
                 } finally {
                   clearTimeout(t1);
                   clearTimeout(t2);
@@ -1339,21 +1349,40 @@ export const PerfilPacienteView: React.FC<PerfilPacienteViewProps> = ({
                 setEditingPlano(manual);
                 setIsEditingPlano(true);
                 setAiErrorMessage(null);
+                setAiErrorDetail(null);
               }}
             />
           ) : (
             <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-6 transition-colors">
               {/* Toast de Erro com Ação de Resiliência se falhou antes de entrar na tela */}
               {aiErrorMessage && (
-                <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/70 text-amber-900 dark:text-amber-200 space-y-3 animate-in slide-in-from-top-2">
-                  <div className="flex items-start gap-3">
-                    <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                    <div className="text-xs sm:text-sm">
-                      <strong className="block font-bold mb-0.5">
-                        Não foi possível gerar o plano com IA no momento.
-                      </strong>
-                      <span>Deseja tentar novamente ou criar um Plano Manual?</span>
+                <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/70 text-amber-900 dark:text-amber-200 space-y-3 animate-in slide-in-from-top-2 relative">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                      <div className="text-xs sm:text-sm">
+                        <strong className="block font-bold mb-0.5">
+                          Não foi possível gerar o plano com IA no momento.
+                        </strong>
+                        <span>Deseja tentar novamente ou criar um Plano Manual?</span>
+                        {aiErrorDetail && (
+                          <span className="block mt-1 text-xs opacity-85 text-amber-800 dark:text-amber-300">
+                            Motivo: {aiErrorDetail}
+                          </span>
+                        )}
+                      </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAiErrorMessage(null);
+                        setAiErrorDetail(null);
+                      }}
+                      className="p-1 rounded-lg text-amber-600 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                      title="Fechar aviso"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 pt-1 pl-8">
@@ -1363,6 +1392,7 @@ export const PerfilPacienteView: React.FC<PerfilPacienteViewProps> = ({
                       onClick={async () => {
                         setIsLoadingAi(true);
                         setAiErrorMessage(null);
+                        setAiErrorDetail(null);
                         setAiMessage('Buscando dados do paciente...');
 
                         const t1 = setTimeout(() => setAiMessage('IA analisando metas, restrições e alergias...'), 2000);
@@ -1372,11 +1402,14 @@ export const PerfilPacienteView: React.FC<PerfilPacienteViewProps> = ({
                           const planoGerado = await chamarApiGerarPlano(paciente);
                           setEditingPlano(planoGerado);
                           setIsEditingPlano(true);
+                          setAiErrorMessage(null);
+                          setAiErrorDetail(null);
                         } catch (err: any) {
                           console.error('Erro ao tentar novamente com IA:', err);
                           setAiErrorMessage(
                             'Não foi possível gerar o plano com IA no momento. Deseja tentar novamente ou criar um Plano Manual?'
                           );
+                          setAiErrorDetail(err?.message || null);
                         } finally {
                           clearTimeout(t1);
                           clearTimeout(t2);
@@ -1397,6 +1430,7 @@ export const PerfilPacienteView: React.FC<PerfilPacienteViewProps> = ({
                         setEditingPlano(manual);
                         setIsEditingPlano(true);
                         setAiErrorMessage(null);
+                        setAiErrorDetail(null);
                       }}
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -1428,6 +1462,7 @@ export const PerfilPacienteView: React.FC<PerfilPacienteViewProps> = ({
                       setEditingPlano(manual);
                       setIsEditingPlano(true);
                       setAiErrorMessage(null);
+                      setAiErrorDetail(null);
                     }}
                     disabled={isLoadingAi}
                   >
@@ -1443,6 +1478,7 @@ export const PerfilPacienteView: React.FC<PerfilPacienteViewProps> = ({
                     onClick={async () => {
                       setIsLoadingAi(true);
                       setAiErrorMessage(null);
+                      setAiErrorDetail(null);
                       setAiMessage('Buscando dados do paciente...');
 
                       const t1 = setTimeout(() => setAiMessage('IA analisando metas, restrições e alergias...'), 2000);
@@ -1453,11 +1489,14 @@ export const PerfilPacienteView: React.FC<PerfilPacienteViewProps> = ({
                         const planoGerado = await chamarApiGerarPlano(paciente);
                         setEditingPlano(planoGerado);
                         setIsEditingPlano(true);
+                        setAiErrorMessage(null);
+                        setAiErrorDetail(null);
                       } catch (err: any) {
                         console.error('Erro ao gerar com IA:', err);
                         setAiErrorMessage(
                           'Não foi possível gerar o plano com IA no momento. Deseja tentar novamente ou criar um Plano Manual?'
                         );
+                        setAiErrorDetail(err?.message || null);
                       } finally {
                         clearTimeout(t1);
                         clearTimeout(t2);

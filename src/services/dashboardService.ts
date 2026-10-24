@@ -167,10 +167,23 @@ export async function getPacientes(nutricionistaId: string): Promise<Paciente[]>
       [nutricionistaId]
     );
 
-    return (rows || []).map((r: any) => ({
-      ...r,
-      total_consultas: Number(r.total_consultas || 0),
-    }));
+    return (rows || []).map((r: any) => {
+      let dataNasc = r.data_nascimento;
+      if (dataNasc instanceof Date) {
+        dataNasc = dataNasc.toISOString().split('T')[0];
+      } else if (typeof dataNasc === 'string') {
+        dataNasc = dataNasc.split('T')[0];
+      }
+      return {
+        ...r,
+        data_nascimento: dataNasc || '',
+        peso_inicial: r.peso_inicial !== null && r.peso_inicial !== undefined ? Number(r.peso_inicial) : null,
+        altura: r.altura !== null && r.altura !== undefined ? Number(r.altura) : null,
+        litros_agua: r.litros_agua !== null && r.litros_agua !== undefined ? Number(r.litros_agua) : null,
+        refeicoes_por_dia: r.refeicoes_por_dia !== null && r.refeicoes_por_dia !== undefined ? Number(r.refeicoes_por_dia) : null,
+        total_consultas: Number(r.total_consultas || 0),
+      };
+    });
   } catch (error) {
     console.error('Erro ao buscar pacientes:', error);
     return [];
@@ -191,14 +204,57 @@ export async function getPacienteDetalhes(pacienteId: string, nutricionistaId: s
       return { paciente: null, consultas: [] };
     }
 
-    const paciente = pacienteRows[0] as unknown as Paciente;
+    const raw = pacienteRows[0] as any;
+    let dataNascimento = raw.data_nascimento;
+    if (dataNascimento instanceof Date) {
+      dataNascimento = dataNascimento.toISOString().split('T')[0];
+    } else if (typeof dataNascimento === 'string') {
+      dataNascimento = dataNascimento.split('T')[0];
+    }
+
+    const paciente = {
+      ...raw,
+      data_nascimento: dataNascimento || '',
+      peso_inicial: raw.peso_inicial !== null && raw.peso_inicial !== undefined ? Number(raw.peso_inicial) : null,
+      altura: raw.altura !== null && raw.altura !== undefined ? Number(raw.altura) : null,
+      litros_agua: raw.litros_agua !== null && raw.litros_agua !== undefined ? Number(raw.litros_agua) : null,
+      refeicoes_por_dia: raw.refeicoes_por_dia !== null && raw.refeicoes_por_dia !== undefined ? Number(raw.refeicoes_por_dia) : null,
+      objetivos: Array.isArray(raw.objetivos) ? raw.objetivos : [],
+      patologias: Array.isArray(raw.patologias) ? raw.patologias : [],
+      restricoes_alimentares: Array.isArray(raw.restricoes_alimentares) ? raw.restricoes_alimentares : [],
+      alergias: Array.isArray(raw.alergias) ? raw.alergias : [],
+    } as unknown as Paciente;
 
     const consultasRows = await sql.query(
       `SELECT * FROM public.consultas WHERE paciente_id = $1 ORDER BY data_consulta DESC`,
       [pacienteId]
     );
 
-    const consultas = (consultasRows || []) as unknown as Consulta[];
+    const consultas = (consultasRows || []).map((c: any) => {
+      let dataCons = c.data_consulta;
+      if (dataCons instanceof Date) {
+        dataCons = dataCons.toISOString().split('T')[0];
+      } else if (typeof dataCons === 'string') {
+        dataCons = dataCons.split('T')[0];
+      }
+
+      let proxRetorno = c.proximo_retorno;
+      if (proxRetorno instanceof Date) {
+        proxRetorno = proxRetorno.toISOString().split('T')[0];
+      } else if (typeof proxRetorno === 'string') {
+        proxRetorno = proxRetorno.split('T')[0];
+      }
+
+      return {
+        ...c,
+        data_consulta: dataCons || '',
+        proximo_retorno: proxRetorno || null,
+        peso: c.peso !== null && c.peso !== undefined ? Number(c.peso) : null,
+        cintura: c.cintura !== null && c.cintura !== undefined ? Number(c.cintura) : null,
+        quadril: c.quadril !== null && c.quadril !== undefined ? Number(c.quadril) : null,
+        percentual_gordura: c.percentual_gordura !== null && c.percentual_gordura !== undefined ? Number(c.percentual_gordura) : null,
+      };
+    }) as unknown as Consulta[];
 
     return { paciente, consultas };
   } catch (error) {

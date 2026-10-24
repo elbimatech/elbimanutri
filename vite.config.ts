@@ -23,10 +23,19 @@ function devApiPlugin(): Plugin {
             const env = loadEnv('development', process.cwd(), '');
             const apiKey = env.GEMINI_API_KEY || process.env.GEMINI_API_KEY;
 
-            if (!apiKey) {
-              res.statusCode = 500;
+            if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
+              res.statusCode = 400;
               res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ error: 'Chave GEMINI_API_KEY não configurada no .env' }));
+              res.end(JSON.stringify({ error: 'Chave GEMINI_API_KEY não configurada no .env. Obtenha em https://aistudio.google.com/app/apikey' }));
+              return;
+            }
+
+            if (apiKey.startsWith('AQ.')) {
+              res.statusCode = 401;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ 
+                error: 'A chave em GEMINI_API_KEY começa com "AQ.", que é um token de sessão/OAuth e não uma API Key do Google AI Studio. Crie uma chave válida (iniciada por "AIzaSy...") em https://aistudio.google.com/app/apikey e atualize seu .env.' 
+              }));
               return;
             }
 

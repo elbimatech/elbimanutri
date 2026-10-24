@@ -58,9 +58,29 @@ export function formatPhone(value: string): string {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
 }
 
-export function calculateAge(dateString: string | null | undefined): number | null {
-  if (!dateString) return null;
-  const parts = dateString.split('-');
+/**
+ * Converte com segurança qualquer formato de data (Date, string ISO, timestamp) para YYYY-MM-DD
+ */
+export function toISODateString(dateInput: unknown): string {
+  if (!dateInput) return '';
+  if (dateInput instanceof Date) {
+    if (isNaN(dateInput.getTime())) return '';
+    return dateInput.toISOString().split('T')[0];
+  }
+  if (typeof dateInput === 'string') {
+    return dateInput.split('T')[0];
+  }
+  try {
+    return String(dateInput).split('T')[0];
+  } catch {
+    return '';
+  }
+}
+
+export function calculateAge(dateInput: string | Date | null | undefined): number | null {
+  if (!dateInput) return null;
+  const isoStr = toISODateString(dateInput);
+  const parts = isoStr.split('-');
   if (parts.length !== 3) return null;
   
   const birthYear = parseInt(parts[0], 10);
