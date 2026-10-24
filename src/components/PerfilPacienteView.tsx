@@ -6,6 +6,8 @@ import {
   getPacienteDetalhes, 
   updatePaciente, 
   getPlanosAlimentares, 
+  createPlanoAlimentar,
+  deletePlanoAlimentar,
   deleteConsulta 
 } from '../services/dashboardService';
 import { useAuth } from '../context/AuthContext';
@@ -27,12 +29,26 @@ import {
   ChevronRight, 
   UtensilsCrossed, 
   X,
-  Stethoscope
+  Stethoscope,
+  Edit3,
+  Printer,
+  RotateCcw,
+  Check
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { WeightEvolutionChart } from './WeightEvolutionChart';
 import { NovaConsultaModal } from './NovaConsultaModal';
+import { PlanoAlimentarEditor } from './PlanoAlimentarEditor';
+import { 
+  PlanoSemanal, 
+  chamarApiGerarPlano, 
+  gerarPlanoManualPadrao,
+  normalizarPlanoSemanal,
+  DIAS_DA_SEMANA,
+  REFEICOES_NOMES,
+  RefeicoesDia
+} from '../services/geminiService';
 import { 
   calculateAge, 
   calculateIMC, 
@@ -116,9 +132,15 @@ export const PerfilPacienteView: React.FC<PerfilPacienteViewProps> = ({
 
   // Modal para ver plano alimentar selecionado
   const [selectedPlano, setSelectedPlano] = useState<PlanoAlimentar | null>(null);
+  const [selectedPlanoDia, setSelectedPlanoDia] = useState<string>(DIAS_DA_SEMANA[0]);
 
-  // Modal/Aviso do botão "Gerar Plano Alimentar" (Prompt 5: implementar no próximo prompt)
-  const [showGerarPlanoAviso, setShowGerarPlanoAviso] = useState(false);
+  // Estados de Geração e Edição de Plano Alimentar (Prompt 6)
+  const [isEditingPlano, setIsEditingPlano] = useState(false);
+  const [editingPlano, setEditingPlano] = useState<PlanoSemanal | null>(null);
+  const [isLoadingAi, setIsLoadingAi] = useState(false);
+  const [aiMessage, setAiMessage] = useState('');
+  const [aiErrorMessage, setAiErrorMessage] = useState<string | null>(null);
+  const [savingPlano, setSavingPlano] = useState(false);
 
   // Estados de formulário editável diretamente na página (Seção 1)
   const [savingPaciente, setSavingPaciente] = useState(false);
@@ -1248,93 +1270,344 @@ export const PerfilPacienteView: React.FC<PerfilPacienteViewProps> = ({
       )}
 
       {/* ========================================================
-          SEÇÃO 3 — PLANOS ALIMENTARES (HISTÓRICO + MODAL)
+          SEÇÃO 3 — PLANOS ALIMENTARES (IA + EDITOR + HISTÓRICO)
          ======================================================== */}
       {activeSection === 'planos' && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-6 transition-colors">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
-            <div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <UtensilsCrossed className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                <span>Planos Alimentares</span>
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Histórico de dietas e prescrições nutricionais personalizadas
-              </p>
-            </div>
+        <div className="space-y-6">
+          {/* Se estiver no Modo de Edição ou Carregando IA, renderiza o Editor Completo */}
+          {isEditingPlano && editingPlano ? (
+            <PlanoAlimentarEditor
+              paciente={paciente}
+              plano={editingPlano}
+              onPlanoChange={(novoPlano) => setEditingPlano(novoPlano)}
+              onSave={async () => {
+                if (!pacienteId || !editingPlano) return;
+                setSavingPlano(true);
+                try {
+                  await createPlanoAlimentar(pacienteId, editingPlano);
+                  const novosPlanos = await getPlanosAlimentares(pacienteId);
+                  setPlanosAlimentares(novosPlanos);
+                  setIsEditingPlano(false);
+                  setEditingPlano(null);
+                  setSuccessMessage('Plano alimentar salvo com sucesso no prontuário!');
+                  if (onPatientUpdated) onPatientUpdated();
+                  setTimeout(() => setSuccessMessage(null), 4000);
+                } catch (err) {
+                  console.error('Erro ao salvar plano alimentar:', err);
+                  alert('Erro ao salvar plano alimentar no banco de dados. Tente novamente.');
+                } finally {
+                  setSavingPlano(false);
+                }
+              }}
+              onCancel={() => {
+                setIsEditingPlano(false);
+                setEditingPlano(null);
+                setAiErrorMessage(null);
+              }}
+              saving={savingPlano}
+              isLoadingAi={isLoadingAi}
+              aiMessage={aiMessage}
+              errorMessage={aiErrorMessage}
+              onRetryAi={async () => {
+                setIsLoadingAi(true);
+                setAiErrorMessage(null);
+                setAiMessage('Buscando dados do paciente...');
 
-            {/* Botão "Gerar Plano Alimentar" bem visível (Prompt 5) */}
-            <Button
-              variant="primary"
-              size="md"
-              onClick={() => setShowGerarPlanoAviso(true)}
-              className="shadow-md shadow-emerald-600/25"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>Gerar Plano Alimentar</span>
-            </Button>
-          </div>
+                const t1 = setTimeout(() => setAiMessage('IA analisando metas, restrições e alergias...'), 2000);
+                const t2 = setTimeout(() => setAiMessage('IA calculando cardápio semanal variado...'), 4500);
+                const t3 = setTimeout(() => setAiMessage('Estruturando 5 opções para cada refeição...'), 7500);
 
-          {/* Histórico de Planos Salvos */}
-          {planosAlimentares.length === 0 ? (
-            <div className="py-16 text-center bg-slate-50/70 dark:bg-slate-950/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-8 flex flex-col items-center justify-center">
-              <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4 shadow-2xs">
-                <UtensilsCrossed className="w-8 h-8" />
-              </div>
-              <h4 className="text-base font-bold text-slate-800 dark:text-slate-200">
-                Nenhum plano alimentar gerado ainda
-              </h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-5 max-w-md">
-                Você poderá gerar cardápios calculados e adaptados às necessidades energéticas e preferências clínicas deste paciente.
-              </p>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => setShowGerarPlanoAviso(true)}
-              >
-                <Sparkles className="w-4 h-4" />
-                <span>Gerar Plano Alimentar</span>
-              </Button>
-            </div>
+                try {
+                  const planoGerado = await chamarApiGerarPlano(paciente);
+                  setEditingPlano(planoGerado);
+                  setIsEditingPlano(true);
+                } catch (err: any) {
+                  console.error('Erro ao tentar novamente com IA:', err);
+                  setAiErrorMessage(
+                    'Não foi possível gerar o plano com IA no momento. Deseja tentar novamente ou criar um Plano Manual?'
+                  );
+                } finally {
+                  clearTimeout(t1);
+                  clearTimeout(t2);
+                  clearTimeout(t3);
+                  setIsLoadingAi(false);
+                  setAiMessage('');
+                }
+              }}
+              onInitManual={() => {
+                const manual = gerarPlanoManualPadrao(paciente);
+                setEditingPlano(manual);
+                setIsEditingPlano(true);
+                setAiErrorMessage(null);
+              }}
+            />
           ) : (
-            <div className="space-y-3">
-              {planosAlimentares.map((plano) => {
-                const dataGeracao = new Date(plano.created_at).toLocaleDateString('pt-BR', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                });
-
-                return (
-                  <div
-                    key={plano.id}
-                    onClick={() => setSelectedPlano(plano)}
-                    className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 hover:border-emerald-300 dark:hover:border-emerald-500/50 hover:bg-emerald-50/30 dark:hover:bg-slate-800 transition-all cursor-pointer flex items-center justify-between gap-4 group"
-                  >
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-11 h-11 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                        <FileText className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                          Plano Alimentar Prescrito
-                        </h4>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
-                          <Clock className="w-3 h-3" />
-                          <span>Gerado em {dataGeracao}</span>
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                      <span className="hidden sm:inline">Ver conteúdo</span>
-                      <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-6 transition-colors">
+              {/* Toast de Erro com Ação de Resiliência se falhou antes de entrar na tela */}
+              {aiErrorMessage && (
+                <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/70 text-amber-900 dark:text-amber-200 space-y-3 animate-in slide-in-from-top-2">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <div className="text-xs sm:text-sm">
+                      <strong className="block font-bold mb-0.5">
+                        Não foi possível gerar o plano com IA no momento.
+                      </strong>
+                      <span>Deseja tentar novamente ou criar um Plano Manual?</span>
                     </div>
                   </div>
-                );
-              })}
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1 pl-8">
+                    <Button 
+                      size="sm" 
+                      variant="primary" 
+                      onClick={async () => {
+                        setIsLoadingAi(true);
+                        setAiErrorMessage(null);
+                        setAiMessage('Buscando dados do paciente...');
+
+                        const t1 = setTimeout(() => setAiMessage('IA analisando metas, restrições e alergias...'), 2000);
+                        const t2 = setTimeout(() => setAiMessage('IA calculando cardápio semanal variado...'), 4500);
+
+                        try {
+                          const planoGerado = await chamarApiGerarPlano(paciente);
+                          setEditingPlano(planoGerado);
+                          setIsEditingPlano(true);
+                        } catch (err: any) {
+                          console.error('Erro ao tentar novamente com IA:', err);
+                          setAiErrorMessage(
+                            'Não foi possível gerar o plano com IA no momento. Deseja tentar novamente ou criar um Plano Manual?'
+                          );
+                        } finally {
+                          clearTimeout(t1);
+                          clearTimeout(t2);
+                          setIsLoadingAi(false);
+                          setAiMessage('');
+                        }
+                      }}
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Tentar novamente com IA</span>
+                    </Button>
+
+                    <Button 
+                      size="sm" 
+                      variant="secondary" 
+                      onClick={() => {
+                        const manual = gerarPlanoManualPadrao(paciente);
+                        setEditingPlano(manual);
+                        setIsEditingPlano(true);
+                        setAiErrorMessage(null);
+                      }}
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>Criar Plano Manual</span>
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Header da Seção de Planos com Botão em Destaque (Prompt 6) */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <UtensilsCrossed className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                    <span>Planos Alimentares</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Histórico de prescrições nutricionais personalizadas salvas no banco de dados
+                  </p>
+                </div>
+
+                {/* Botões de Ação */}
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    onClick={() => {
+                      const manual = gerarPlanoManualPadrao(paciente);
+                      setEditingPlano(manual);
+                      setIsEditingPlano(true);
+                      setAiErrorMessage(null);
+                    }}
+                    disabled={isLoadingAi}
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Plano Manual</span>
+                  </Button>
+
+                  <Button
+                    variant="primary"
+                    size="md"
+                    disabled={isLoadingAi}
+                    loading={isLoadingAi}
+                    onClick={async () => {
+                      setIsLoadingAi(true);
+                      setAiErrorMessage(null);
+                      setAiMessage('Buscando dados do paciente...');
+
+                      const t1 = setTimeout(() => setAiMessage('IA analisando metas, restrições e alergias...'), 2000);
+                      const t2 = setTimeout(() => setAiMessage('IA calculando cardápio semanal variado...'), 4500);
+                      const t3 = setTimeout(() => setAiMessage('Estruturando 5 opções para cada refeição...'), 7500);
+
+                      try {
+                        const planoGerado = await chamarApiGerarPlano(paciente);
+                        setEditingPlano(planoGerado);
+                        setIsEditingPlano(true);
+                      } catch (err: any) {
+                        console.error('Erro ao gerar com IA:', err);
+                        setAiErrorMessage(
+                          'Não foi possível gerar o plano com IA no momento. Deseja tentar novamente ou criar um Plano Manual?'
+                        );
+                      } finally {
+                        clearTimeout(t1);
+                        clearTimeout(t2);
+                        clearTimeout(t3);
+                        setIsLoadingAi(false);
+                        setAiMessage('');
+                      }
+                    }}
+                    className="shadow-md shadow-emerald-600/25 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800"
+                  >
+                    <Sparkles className="w-4 h-4 text-emerald-200" />
+                    <span>Gerar Plano com IA</span>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Loading Visual Dinâmico se estiver gerando fora do editor */}
+              {isLoadingAi && (
+                <div className="p-10 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/60 text-center space-y-4 animate-in fade-in">
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white flex items-center justify-center mx-auto shadow-md shadow-emerald-600/30">
+                    <Sparkles className="w-7 h-7 animate-spin duration-1000" />
+                  </div>
+                  <div>
+                    <h4 className="text-base font-bold text-emerald-900 dark:text-emerald-300">
+                      Inteligência Artificial em Ação
+                    </h4>
+                    <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 mt-1 animate-pulse">
+                      {aiMessage || 'Gerando cardápio...'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Histórico de Planos Salvos */}
+              {planosAlimentares.length === 0 && !isLoadingAi ? (
+                <div className="py-16 text-center bg-slate-50/70 dark:bg-slate-950/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-8 flex flex-col items-center justify-center">
+                  <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4 shadow-2xs">
+                    <UtensilsCrossed className="w-8 h-8" />
+                  </div>
+                  <h4 className="text-base font-bold text-slate-800 dark:text-slate-200">
+                    Nenhum plano alimentar gerado ainda
+                  </h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-5 max-w-md">
+                    Clique no botão acima para acionar a IA que lê o perfil deste paciente (metas, restrições e alergias) e gera um cardápio semanal completo.
+                  </p>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    onClick={async () => {
+                      setIsLoadingAi(true);
+                      setAiErrorMessage(null);
+                      setAiMessage('Buscando dados do paciente...');
+
+                      const t1 = setTimeout(() => setAiMessage('IA analisando metas, restrições e alergias...'), 2000);
+                      const t2 = setTimeout(() => setAiMessage('IA calculando cardápio semanal variado...'), 4500);
+
+                      try {
+                        const planoGerado = await chamarApiGerarPlano(paciente);
+                        setEditingPlano(planoGerado);
+                        setIsEditingPlano(true);
+                      } catch (err: any) {
+                        console.error('Erro ao gerar com IA:', err);
+                        setAiErrorMessage(
+                          'Não foi possível gerar o plano com IA no momento. Deseja tentar novamente ou criar um Plano Manual?'
+                        );
+                      } finally {
+                        clearTimeout(t1);
+                        clearTimeout(t2);
+                        setIsLoadingAi(false);
+                        setAiMessage('');
+                      }
+                    }}
+                    className="shadow-md shadow-emerald-600/20"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>Gerar Plano com IA</span>
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {planosAlimentares.map((plano, idx) => {
+                    const dataGeracao = new Date(plano.created_at).toLocaleDateString('pt-BR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    });
+
+                    return (
+                      <div
+                        key={plano.id}
+                        onClick={() => {
+                          setSelectedPlano(plano);
+                          setSelectedPlanoDia(DIAS_DA_SEMANA[0]);
+                        }}
+                        className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 hover:border-emerald-300 dark:hover:border-emerald-500/50 hover:bg-emerald-50/30 dark:hover:bg-slate-800 transition-all cursor-pointer flex items-center justify-between gap-4 group shadow-2xs"
+                      >
+                        <div className="flex items-center gap-3.5">
+                          <div className="w-11 h-11 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-2xs">
+                            <FileText className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                                Plano Alimentar Semanal #{planosAlimentares.length - idx}
+                              </h4>
+                              {idx === 0 && (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                                  Mais recente
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
+                              <Clock className="w-3 h-3" />
+                              <span>Gerado em {dataGeracao}</span>
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (!window.confirm('Deseja excluir este plano alimentar do histórico?')) return;
+                              try {
+                                await deletePlanoAlimentar(plano.id);
+                                setPlanosAlimentares((prev) => prev.filter((p) => p.id !== plano.id));
+                                if (onPatientUpdated) onPatientUpdated();
+                              } catch (err) {
+                                console.error('Erro ao excluir:', err);
+                              }
+                            }}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors opacity-0 group-hover:opacity-100"
+                            title="Excluir plano alimentar"
+                            aria-label="Excluir plano alimentar"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                            <span className="hidden sm:inline">Visualizar cardápio</span>
+                            <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1354,68 +1627,170 @@ export const PerfilPacienteView: React.FC<PerfilPacienteViewProps> = ({
         }}
       />
 
-      {/* Modal para Visualização Completa de Plano Alimentar Salvo */}
+      {/* Modal Interativo para Visualização Completa de Plano Alimentar Salvo (Prompt 6) */}
       {selectedPlano && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <UtensilsCrossed className="w-6 h-6" />
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-4xl w-full shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200">
+            {/* Header do Modal */}
+            <div className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-700 text-white p-5 sm:p-6 flex items-center justify-between">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center text-white shadow-inner">
+                  <UtensilsCrossed className="w-6 h-6" />
+                </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">Conteúdo do Plano Alimentar</h3>
+                  <h3 className="text-xl font-bold text-white tracking-tight">
+                    Plano Alimentar Prescrito
+                  </h3>
                   <p className="text-xs text-emerald-100">
-                    Gerado em {new Date(selectedPlano.created_at).toLocaleDateString('pt-BR')}
+                    Paciente: {paciente.nome} &bull; Gerado em {new Date(selectedPlano.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setSelectedPlano(null)}
-                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl text-xs font-mono text-slate-800 dark:text-slate-200 overflow-x-auto border border-slate-200 dark:border-slate-700">
-                <pre>{typeof selectedPlano.conteudo === 'string' ? selectedPlano.conteudo : JSON.stringify(selectedPlano.conteudo, null, 2)}</pre>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors"
+                  title="Imprimir plano alimentar"
+                >
+                  <Printer className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={() => setSelectedPlano(null)}
+                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors"
+                  aria-label="Fechar"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
             </div>
 
-            <div className="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-end">
-              <Button variant="secondary" size="md" onClick={() => setSelectedPlano(null)}>
-                Fechar
-              </Button>
+            {/* Conteúdo: Abas por Dia da Semana e Refeições */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
+              {(() => {
+                let conteudoObj: PlanoSemanal;
+                try {
+                  const raw = typeof selectedPlano.conteudo === 'string' 
+                    ? JSON.parse(selectedPlano.conteudo) 
+                    : selectedPlano.conteudo;
+                  conteudoObj = normalizarPlanoSemanal(raw);
+                } catch (e) {
+                  conteudoObj = gerarPlanoManualPadrao(paciente);
+                }
+
+                const diaAtivoObj = conteudoObj.plano_semanal.find((d) => d.dia === selectedPlanoDia) || conteudoObj.plano_semanal[0];
+
+                return (
+                  <>
+                    {/* Seletor de Dias da Semana (Tabs) */}
+                    <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-2 border-b border-slate-200 dark:border-slate-800">
+                      {DIAS_DA_SEMANA.map((dia) => {
+                        const isSelected = selectedPlanoDia === dia;
+                        return (
+                          <button
+                            key={dia}
+                            onClick={() => setSelectedPlanoDia(dia)}
+                            className={`py-2 px-3.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
+                              isSelected
+                                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                                : 'bg-slate-100/80 dark:bg-slate-800/70 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                            }`}
+                          >
+                            {dia}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Grade das Refeições do Dia Selecionado */}
+                    <div className="space-y-4">
+                      {(Object.keys(REFEICOES_NOMES) as Array<keyof RefeicoesDia>).map((refeicaoKey) => {
+                        const info = REFEICOES_NOMES[refeicaoKey];
+                        const opcoes = diaAtivoObj.refeicoes[refeicaoKey] || [];
+
+                        return (
+                          <div
+                            key={refeicaoKey}
+                            className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 space-y-2.5"
+                          >
+                            <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                              <span>{info.label}</span>
+                            </h4>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                              {opcoes.map((opcao, oIdx) => (
+                                <div
+                                  key={oIdx}
+                                  className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/70 dark:border-slate-700 flex items-start gap-2 text-slate-700 dark:text-slate-300"
+                                >
+                                  <span className="w-5 h-5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold text-[10px] flex items-center justify-center shrink-0">
+                                    {oIdx + 1}
+                                  </span>
+                                  <span className="font-medium leading-relaxed">{opcao}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* Modal / Dialog Informativo para "Gerar Plano Alimentar" */}
-      {showGerarPlanoAviso && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-800 p-6 text-center space-y-4 animate-in zoom-in-95 duration-150">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-inner">
-              <Sparkles className="w-7 h-7" />
-            </div>
-
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-              Gerador de Planos Alimentares
-            </h3>
-
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              O motor de inteligência e cálculo automatizado para elaboração de cardápios completos será implementado no <strong>Prompt 6</strong>.
-            </p>
-
-            <div className="pt-2">
+            {/* Modal Footer com Ações */}
+            <div className="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
               <Button
-                variant="primary"
-                size="md"
-                onClick={() => setShowGerarPlanoAviso(false)}
-                className="w-full"
+                variant="outline"
+                size="sm"
+                className="text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/60 hover:bg-red-50 dark:hover:bg-red-950/40"
+                onClick={async () => {
+                  if (!window.confirm('Deseja realmente excluir este plano alimentar?')) return;
+                  try {
+                    await deletePlanoAlimentar(selectedPlano.id);
+                    setPlanosAlimentares((prev) => prev.filter((p) => p.id !== selectedPlano.id));
+                    setSelectedPlano(null);
+                    if (onPatientUpdated) onPatientUpdated();
+                  } catch (err) {
+                    console.error('Erro ao excluir plano:', err);
+                  }
+                }}
               >
-                Entendido
+                <Trash2 className="w-4 h-4" />
+                <span>Excluir</span>
               </Button>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    let parsed: PlanoSemanal;
+                    try {
+                      parsed = normalizarPlanoSemanal(
+                        typeof selectedPlano.conteudo === 'string'
+                          ? JSON.parse(selectedPlano.conteudo)
+                          : selectedPlano.conteudo
+                      );
+                    } catch (e) {
+                      parsed = gerarPlanoManualPadrao(paciente);
+                    }
+                    setEditingPlano(parsed);
+                    setIsEditingPlano(true);
+                    setSelectedPlano(null);
+                  }}
+                >
+                  <Edit3 className="w-4 h-4" />
+                  <span>Editar como Novo Plano</span>
+                </Button>
+
+                <Button variant="primary" size="sm" onClick={() => setSelectedPlano(null)}>
+                  Fechar
+                </Button>
+              </div>
             </div>
           </div>
         </div>

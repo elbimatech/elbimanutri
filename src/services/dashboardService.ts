@@ -410,6 +410,42 @@ export async function getPlanosAlimentares(pacienteId: string): Promise<PlanoAli
 }
 
 /**
+ * Salva um novo plano alimentar para o paciente no banco Neon
+ */
+export async function createPlanoAlimentar(
+  pacienteId: string,
+  conteudo: any
+): Promise<PlanoAlimentar | null> {
+  try {
+    const jsonStr = typeof conteudo === 'string' ? conteudo : JSON.stringify(conteudo);
+    const rows = await sql.query(
+      `INSERT INTO public.planos_alimentares (paciente_id, conteudo)
+       VALUES ($1, $2::jsonb)
+       RETURNING *`,
+      [pacienteId, jsonStr]
+    );
+
+    return rows && rows.length > 0 ? (rows[0] as unknown as PlanoAlimentar) : null;
+  } catch (error) {
+    console.error('Erro ao salvar plano alimentar no Neon:', error);
+    throw error;
+  }
+}
+
+/**
+ * Exclui um plano alimentar do histórico do paciente
+ */
+export async function deletePlanoAlimentar(planoId: string): Promise<boolean> {
+  try {
+    await sql.query(`DELETE FROM public.planos_alimentares WHERE id = $1`, [planoId]);
+    return true;
+  } catch (error) {
+    console.error('Erro ao excluir plano alimentar no Neon:', error);
+    return false;
+  }
+}
+
+/**
  * Popula dados de exemplo realistas para o nutricionista poder testar e visualizar o dashboard imediatamente
  */
 export async function seedDemoData(nutricionistaId: string): Promise<boolean> {

@@ -1,3 +1,6 @@
+
+05-perfil_paciente.md
+100%
 # Prompt 5 — Perfil do paciente + Consultas
 
 Agora vamos criar a página de perfil do paciente. Essa tela é acessada ao clicar em um paciente na listagem ou nos cards do dashboard.
@@ -42,11 +45,11 @@ A página deve ser organizada em 3 seções: Dados do Paciente, Consultas e Plan
 - Se não houver planos salvos ainda, exibir a mensagem "Nenhum plano alimentar gerado ainda"
 
 ## Regras importantes
-- Todos os dados devem ser carregados em tempo real
-- Todas as alterações devem ser salvas
+- Todos os dados devem ser carregados do Neon em tempo real
+- Todas as alterações devem ser salvas no Neon
 - A seção de planos alimentares será implementada no próximo prompt — por enquanto deixar o botão "Gerar Plano Alimentar" visível mas sem funcionalidade
 
 ## Design
-- Seguir o mesmo padrão visual do sistema (verde e branco)
+- Seguir o mesmo padrão visual do sistema
 - Menu lateral fixo mantido
 - Gráfico de evolução de peso em destaque na seção de consultas
