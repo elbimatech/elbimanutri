@@ -4,6 +4,7 @@ import { createPaciente, Paciente } from '../services/dashboardService';
 import { Input } from './ui/Input';
 import { Button } from './ui/Button';
 import { X, UserPlus, Sparkles, Check, AlertCircle } from 'lucide-react';
+import { formatPhone } from '../lib/patientHelpers';
 
 interface NewPatientModalProps {
   isOpen: boolean;
@@ -100,8 +101,8 @@ export const NewPatientModal: React.FC<NewPatientModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -129,14 +130,14 @@ export const NewPatientModal: React.FC<NewPatientModalProps> = ({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
           {errorMessage && (
-            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
+            <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errorMessage}</span>
             </div>
           )}
 
           <div className="space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400">
               Dados Pessoais
             </h3>
 
@@ -166,7 +167,7 @@ export const NewPatientModal: React.FC<NewPatientModalProps> = ({
                 label="WhatsApp / Telefone"
                 placeholder="(11) 98765-4321"
                 value={whatsapp}
-                onChange={(e) => setWhatsapp(e.target.value)}
+                onChange={(e) => setWhatsapp(formatPhone ? formatPhone(e.target.value) : e.target.value)}
               />
 
               <Input
@@ -178,13 +179,13 @@ export const NewPatientModal: React.FC<NewPatientModalProps> = ({
               />
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-700">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Sexo Biológico
                 </label>
                 <select
                   value={sexo}
                   onChange={(e) => setSexo(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 >
                   <option value="Feminino">Feminino</option>
                   <option value="Masculino">Masculino</option>
@@ -193,7 +194,7 @@ export const NewPatientModal: React.FC<NewPatientModalProps> = ({
               </div>
             </div>
 
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 pt-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400 pt-2">
               Biometria & Hábitos
             </h3>
 
@@ -239,13 +240,13 @@ export const NewPatientModal: React.FC<NewPatientModalProps> = ({
               />
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-700">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Nível de Atividade Física
                 </label>
                 <select
                   value={nivelAtividade}
                   onChange={(e) => setNivelAtividade(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 >
                   <option value="Sedentário">Sedentário</option>
                   <option value="Leve">Leve (1-2x/semana)</option>
@@ -282,7 +283,7 @@ export const NewPatientModal: React.FC<NewPatientModalProps> = ({
             />
           </div>
 
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
             <Button
               type="button"
               variant="secondary"
