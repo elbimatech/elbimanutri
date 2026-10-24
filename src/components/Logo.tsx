@@ -29,7 +29,7 @@ export const Logo: React.FC<LogoProps> = ({
     <div className={cn("flex flex-col items-center text-center", className)}>
       <div className="flex items-center gap-3">
         <div className={cn(
-          "rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white shadow-md shadow-emerald-600/25 ring-4 ring-emerald-50",
+          "rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white shadow-md shadow-emerald-600/25 ring-4 ring-emerald-50 dark:ring-emerald-950/40",
           iconSizes[size]
         )}>
           <Leaf className="w-full h-full transform -rotate-12 fill-white/20 stroke-white stroke-[2.2]" />
@@ -37,13 +37,13 @@ export const Logo: React.FC<LogoProps> = ({
         
         <div className="text-left">
           <span className={cn(
-            "font-extrabold tracking-tight text-slate-900 flex items-center gap-1.5",
+            "font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5",
             titleSizes[size]
           )}>
-            Elbima <span className="text-emerald-600">Nutri</span>
+            Elbima <span className="text-emerald-600 dark:text-emerald-400">Nutri</span>
           </span>
           {subtitle && (
-            <span className="block text-[11px] font-medium text-emerald-700/80 uppercase tracking-wider -mt-0.5">
+            <span className="block text-[11px] font-medium text-emerald-700/80 dark:text-emerald-400/90 uppercase tracking-wider -mt-0.5">
               {subtitle}
             </span>
           )}

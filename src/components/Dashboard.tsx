@@ -4,6 +4,7 @@ import { Sidebar, NavigationTab } from './Sidebar';
 import { PacientesView } from './PacientesView';
 import { CadastroPacienteView } from './CadastroPacienteView';
 import { PatientProfileModal } from './PatientProfileModal';
+import { ThemeToggle } from './ThemeToggle';
 import { 
   getDashboardStats, 
   DashboardStats, 
@@ -91,7 +92,7 @@ export const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex transition-colors">
       {/* Menu Lateral Fixo */}
       <Sidebar
         activeTab={activeTab}
@@ -105,39 +106,41 @@ export const Dashboard: React.FC = () => {
       {/* Conteúdo Principal com compensação da Sidebar fixa (lg:ml-72) */}
       <div className="flex-1 flex flex-col min-w-0 lg:ml-72 transition-all">
         {/* Top Header Barra Superior */}
-        <header className="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-2xs backdrop-blur-md bg-white/95">
+        <header className="bg-white/95 dark:bg-slate-900/95 border-b border-slate-200/80 dark:border-slate-800 sticky top-0 z-30 shadow-2xs backdrop-blur-md transition-colors">
           <div className="px-4 sm:px-8 py-3.5 flex items-center justify-between">
             <div className="flex items-center gap-3">
               {/* Botão de Menu Mobile */}
               <button
                 onClick={() => setIsMobileSidebarOpen(true)}
-                className="lg:hidden p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                className="lg:hidden p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 aria-label="Abrir menu"
               >
                 <Menu className="w-5 h-5" />
               </button>
 
               <div>
-                <h2 className="text-base sm:text-lg font-bold text-slate-800 leading-tight">
+                <h2 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 leading-tight">
                   {activeTab === 'dashboard'
                     ? 'Painel de Controle'
                     : activeTab === 'novo-paciente'
                     ? 'Cadastro de Paciente'
                     : 'Gerenciamento de Pacientes'}
                 </h2>
-                <p className="text-xs text-slate-400 hidden sm:block">
+                <p className="text-xs text-slate-400 dark:text-slate-500 hidden sm:block">
                   {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2 sm:gap-2.5">
+              <ThemeToggle variant="icon" />
+
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => loadDashboardData(true)}
                 disabled={refreshing}
-                className="text-slate-600 hover:text-emerald-700"
+                className="text-slate-600 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                 title="Sincronizar em tempo real com o Neon"
               >
                 <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-emerald-600' : ''}`} />
@@ -176,7 +179,7 @@ export const Dashboard: React.FC = () => {
           ) : (
             <>
               {/* Banner de Boas-Vindas */}
-              <div className="bg-gradient-to-br from-emerald-700 via-teal-700 to-emerald-800 rounded-3xl p-6 sm:p-8 text-white shadow-xl shadow-emerald-900/10 relative overflow-hidden">
+              <div className="bg-gradient-to-br from-emerald-700 via-teal-700 to-emerald-800 dark:from-emerald-900 dark:via-teal-950 dark:to-slate-900 border border-transparent dark:border-emerald-800/30 rounded-3xl p-6 sm:p-8 text-white shadow-xl shadow-emerald-900/10 dark:shadow-black/40 relative overflow-hidden transition-colors">
                 <div className="absolute right-0 top-0 w-80 h-full opacity-10 pointer-events-none flex items-center justify-center">
                   <Sparkles className="w-72 h-72 text-white" />
                 </div>
@@ -199,16 +202,16 @@ export const Dashboard: React.FC = () => {
 
               {/* Botão de Ajuda para Popular Dados de Teste (quando 0 pacientes) */}
               {stats.totalPacientes === 0 && !loading && (
-                <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in">
+                <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in transition-colors">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-600 dark:bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-xs">
                       <Sparkles className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-emerald-950">
+                      <h3 className="text-sm font-bold text-emerald-950 dark:text-emerald-100">
                         Seu banco de dados está pronto para receber cadastros!
                       </h3>
-                      <p className="text-xs text-emerald-700 mt-0.5">
+                      <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-0.5">
                         Deseja preencher com alguns pacientes e consultas de exemplo para visualizar os 3 cards em funcionamento?
                       </p>
                     </div>
@@ -219,7 +222,7 @@ export const Dashboard: React.FC = () => {
                     size="sm"
                     onClick={handleSeedDemo}
                     loading={isSeeding}
-                    className="shrink-0 bg-emerald-700 hover:bg-emerald-800"
+                    className="shrink-0 bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-700"
                   >
                     <span>Inserir Dados de Exemplo</span>
                   </Button>
@@ -229,17 +232,17 @@ export const Dashboard: React.FC = () => {
               {/* Seção dos 3 Cards Principais */}
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
                     <span>Visão Geral</span>
                   </h2>
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-slate-400 dark:text-slate-500">
                     Métricas calculadas do seu banco de dados
                   </span>
                 </div>
 
                 {loading ? (
-                  <div className="py-20 flex flex-col items-center justify-center text-emerald-700 font-medium bg-white rounded-3xl border border-slate-200 shadow-2xs">
-                    <Loader2 className="w-8 h-8 animate-spin mb-3 text-emerald-600" />
+                  <div className="py-20 flex flex-col items-center justify-center text-emerald-700 dark:text-emerald-400 font-medium bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+                    <Loader2 className="w-8 h-8 animate-spin mb-3 text-emerald-600 dark:text-emerald-500" />
                     <span>Carregando métricas do Neon em tempo real...</span>
                   </div>
                 ) : (
@@ -249,108 +252,108 @@ export const Dashboard: React.FC = () => {
                       {/* CARD 1 — Total de pacientes ativos */}
                       <div 
                         onClick={() => setActiveTab('pacientes')}
-                        className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-emerald-300 transition-all cursor-pointer group relative overflow-hidden"
+                        className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-7 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-md hover:border-emerald-300 dark:hover:border-emerald-500/50 transition-all cursor-pointer group relative overflow-hidden"
                       >
                         <div className="flex items-start justify-between">
                           <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/20 group-hover:scale-105 transition-transform">
                             <Users className="w-7 h-7" />
                           </div>
 
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/60">
                             <Activity className="w-3.5 h-3.5" />
                             <span>Ativos</span>
                           </span>
                         </div>
 
                         <div className="mt-5">
-                          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                             Card 1 &bull; Pacientes
                           </span>
-                          <h3 className="text-base font-bold text-slate-700 mt-0.5">
+                          <h3 className="text-base font-bold text-slate-700 dark:text-slate-200 mt-0.5">
                             Total de Pacientes Ativos
                           </h3>
                           <div className="flex items-baseline gap-3 mt-2">
-                            <span className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
+                            <span className="text-4xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                               {stats.totalPacientes}
                             </span>
-                            <span className="text-xs text-slate-500 font-medium">
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                               cadastrados por você
                             </span>
                           </div>
                         </div>
 
-                        <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-emerald-600 group-hover:text-emerald-700">
+                        <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-semibold text-emerald-600 dark:text-emerald-400 group-hover:text-emerald-700 dark:group-hover:text-emerald-300">
                           <span>Ver lista de pacientes</span>
                           <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                         </div>
                       </div>
 
                       {/* CARD 2 — Consultas da semana */}
-                      <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-teal-300 transition-all relative overflow-hidden">
+                      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-7 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-md hover:border-teal-300 dark:hover:border-teal-500/50 transition-all relative overflow-hidden">
                         <div className="flex items-start justify-between">
                           <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-700 text-white flex items-center justify-center shadow-md shadow-teal-600/20">
                             <CalendarCheck2 className="w-7 h-7" />
                           </div>
 
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200/70">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200/70 dark:border-teal-800/60">
                             <Calendar className="w-3.5 h-3.5" />
                             <span>Semana Corrente</span>
                           </span>
                         </div>
 
                         <div className="mt-5">
-                          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                             Card 2 &bull; Atendimentos
                           </span>
-                          <h3 className="text-base font-bold text-slate-700 mt-0.5">
+                          <h3 className="text-base font-bold text-slate-700 dark:text-slate-200 mt-0.5">
                             Consultas da Semana
                           </h3>
                           <div className="flex items-baseline gap-3 mt-2">
-                            <span className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
+                            <span className="text-4xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                               {stats.consultasSemana}
                             </span>
-                            <span className="text-xs text-slate-500 font-medium">
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                               atendimentos registrados nesta semana
                             </span>
                           </div>
                         </div>
 
-                        <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                        <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                           <span>Período: Segunda a Domingo</span>
-                          <span className="text-teal-700 font-semibold">Atualizado</span>
+                          <span className="text-teal-700 dark:text-teal-400 font-semibold">Atualizado</span>
                         </div>
                       </div>
                     </div>
 
                     {/* CARD 3 — Pacientes sem retorno */}
-                    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-2xs">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-100">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800 shadow-2xs transition-colors">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-100 dark:border-slate-800">
                         <div className="flex items-center gap-3">
-                          <div className="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center shrink-0">
+                          <div className="w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/60 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0">
                             <Clock className="w-6 h-6" />
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                                 Card 3
                               </span>
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300">
                                 &gt; 30 dias sem retorno
                               </span>
                             </div>
-                            <h3 className="text-lg font-bold text-slate-900">
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                               Pacientes Sem Retorno
                             </h3>
                           </div>
                         </div>
 
-                        <div className="text-xs text-slate-500">
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
                           {stats.pacientesSemRetorno.length > 0 ? (
-                            <span className="font-semibold text-amber-700">
+                            <span className="font-semibold text-amber-700 dark:text-amber-400">
                               {stats.pacientesSemRetorno.length} paciente(s) precisam de contato
                             </span>
                           ) : (
-                            <span className="text-emerald-700 font-medium">
+                            <span className="text-emerald-700 dark:text-emerald-400 font-medium">
                               Nenhuma pendência
                             </span>
                           )}
@@ -361,20 +364,20 @@ export const Dashboard: React.FC = () => {
                       <div className="mt-6">
                         {stats.pacientesSemRetorno.length === 0 ? (
                           /* Regra: "Se não houver pacientes sem retorno, exibir a mensagem 'Nenhum paciente sem retorno no momento'" */
-                          <div className="py-12 px-4 text-center rounded-2xl bg-slate-50/80 border border-slate-200/80 flex flex-col items-center justify-center">
-                            <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-3 shadow-2xs">
-                              <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                          <div className="py-12 px-4 text-center rounded-2xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800/80 flex flex-col items-center justify-center">
+                            <div className="w-14 h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center mb-3 shadow-2xs">
+                              <CheckCircle2 className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
                             </div>
-                            <h4 className="text-base font-bold text-slate-800">
+                            <h4 className="text-base font-bold text-slate-800 dark:text-slate-100">
                               Nenhum paciente sem retorno no momento
                             </h4>
-                            <p className="text-xs text-slate-500 mt-1 max-w-md">
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md">
                               Todos os seus pacientes com consultas realizadas estão com retornos agendados ou foram atendidos há menos de 30 dias.
                             </p>
                           </div>
                         ) : (
                           <div className="space-y-3">
-                            <p className="text-xs text-slate-500 mb-2">
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
                               Clique no nome do paciente para abrir seu perfil e histórico clínico:
                             </p>
                             
@@ -388,7 +391,7 @@ export const Dashboard: React.FC = () => {
                                   <div
                                     key={paciente.paciente_id}
                                     onClick={() => handleOpenPatientProfile(paciente.paciente_id)}
-                                    className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-emerald-300 hover:shadow-md transition-all cursor-pointer group flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                                    className="p-4 rounded-2xl bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 hover:border-emerald-300 dark:hover:border-emerald-500/60 hover:shadow-md transition-all cursor-pointer group flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                                   >
                                     <div className="flex items-center gap-3.5">
                                       <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white font-bold flex items-center justify-center text-sm shadow-xs shrink-0 group-hover:scale-105 transition-transform">
@@ -396,22 +399,22 @@ export const Dashboard: React.FC = () => {
                                       </div>
 
                                       <div>
-                                        <h4 className="font-bold text-slate-900 group-hover:text-emerald-700 transition-colors flex items-center gap-2">
+                                        <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors flex items-center gap-2">
                                           <span>{paciente.paciente_nome}</span>
-                                          <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60 opacity-0 group-hover:opacity-100 transition-opacity">
+                                          <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-200/60 dark:border-emerald-800/60 opacity-0 group-hover:opacity-100 transition-opacity">
                                             Ver Perfil
                                           </span>
                                         </h4>
 
-                                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-0.5">
+                                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                                           {paciente.paciente_whatsapp && (
-                                            <span className="flex items-center gap-1 text-emerald-700 font-medium">
+                                            <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-medium">
                                               <Phone className="w-3 h-3" />
                                               {paciente.paciente_whatsapp}
                                             </span>
                                           )}
                                           {paciente.paciente_email && (
-                                            <span className="flex items-center gap-1 text-slate-500">
+                                            <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
                                               <Mail className="w-3 h-3" />
                                               {paciente.paciente_email}
                                             </span>
@@ -420,17 +423,17 @@ export const Dashboard: React.FC = () => {
                                       </div>
                                     </div>
 
-                                    <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                                    <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-700/60">
                                       <div className="text-left sm:text-right">
-                                        <span className="text-xs text-slate-500 block">
-                                          Última consulta: <strong className="text-slate-800">{dataFormatada}</strong>
+                                        <span className="text-xs text-slate-500 dark:text-slate-400 block">
+                                          Última consulta: <strong className="text-slate-800 dark:text-slate-200">{dataFormatada}</strong>
                                         </span>
-                                        <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md text-[11px] font-bold bg-red-50 text-red-700 border border-red-200">
+                                        <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md text-[11px] font-bold bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/60">
                                           {paciente.dias_sem_consulta} dias sem retorno
                                         </span>
                                       </div>
 
-                                      <div className="w-8 h-8 rounded-full bg-slate-100 group-hover:bg-emerald-600 group-hover:text-white text-slate-400 flex items-center justify-center transition-colors shrink-0">
+                                      <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700/70 group-hover:bg-emerald-600 dark:group-hover:bg-emerald-500 group-hover:text-white text-slate-400 dark:text-slate-300 flex items-center justify-center transition-colors shrink-0">
                                         <ChevronRight className="w-4 h-4" />
                                       </div>
                                     </div>
