@@ -36,6 +36,9 @@ NEON_AUTH_URL=https://<seu-endpoint>.neonauth.<regiao>.aws.neon.tech/neondb/auth
 # Neon Database Connection
 VITE_DATABASE_URL=postgresql://<usuario>:<senha>@<seu-host>.neon.tech/neondb?sslmode=require
 DATABASE_URL=postgresql://<usuario>:<senha>@<seu-host>.neon.tech/neondb?sslmode=require
+
+# Google Gemini API Key (Opcional - Geração de Planos com IA via Serverless Function)
+GEMINI_API_KEY=AIzaSy...
 ```
 
 ---
@@ -72,4 +75,5 @@ DATABASE_URL=postgresql://<usuario>:<senha>@<seu-host>.neon.tech/neondb?sslmode=
    - `NEON_AUTH_URL`
    - `VITE_DATABASE_URL`
    - `DATABASE_URL`
+   - `GEMINI_API_KEY` *(usada apenas na Serverless Function `/api/gerar-plano` — nunca exposta no frontend)*
 4. Clique em **Deploy**.
